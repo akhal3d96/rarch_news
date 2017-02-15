@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.push File.expand_path('../../lib', __FILE__)
+
+require 'rarch_news'
+require 'rlps'
+
+articles = RarchNews.articles
+articles.at(2).save! if RarchNews.first_run?
+last_article = RarchNews::Article.last_article
+
+unread_articles = articles.select { |a| a > last_article }
+unread_articles.each do |a|
+  unless RLPS.processes.select do |p|
+    p.name.casecmp('xorg').zero? ||
+    p.name.casecmp('wayland').zero?
+  end.empty?
+    require 'libnotify'
+    Libnotify.show(body: a.description.slice(0..140), summary: "RarchNews: #{a.title}", timeout: 10)
+  end
+  # TODO sendmail 
+
+end
+unread_articles.first.save! unless unread_articles.empty?
